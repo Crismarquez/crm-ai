@@ -14,7 +14,7 @@ def DeepSupervision(criterion, xs, y):
         xs: tuple of inputs
         y: ground truth
     """
-    loss = 0.
+    loss = 0.0
     for x in xs:
         loss += criterion(x, y)
     loss /= len(xs)
