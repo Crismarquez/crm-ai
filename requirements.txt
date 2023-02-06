@@ -1,2 +1,7 @@
+numpy=1.23
 insightface=0.7
 onnxruntime
+torch
+torchvision
+gdown
+tensorboard
