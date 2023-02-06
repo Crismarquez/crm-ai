@@ -1,0 +1,2 @@
+insightface=0.7
+onnxruntime
