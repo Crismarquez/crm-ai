@@ -13,6 +13,7 @@ from vision_analytic.utils import to_center_objects
 
 ALLOWED_TRACKER_WEIGHTS = ["osnet_x0_25_msmt17.pt"]
 
+
 class Tracker:
     """
     Using bbox, confidence and class this model can predict a unique id object and
@@ -23,9 +24,10 @@ class Tracker:
     update (xywh, confidences, clss, frame)
         this method is used to predict the id, return a dictionary whith id and center.
     """
+
     def __init__(self, tracker_weights="osnet_x0_25_msmt17.pt"):
-        
-        self.config_strongsort = CONFIG_DIR / 'strong_sort.yaml'
+
+        self.config_strongsort = CONFIG_DIR / "strong_sort.yaml"
         self.strong_sort_weights = Path(MODELS_DIR, "strong_sort", tracker_weights)
 
         self.load_tracker()
@@ -35,31 +37,30 @@ class Tracker:
         cfg.merge_from_file(self.config_strongsort)
 
         if torch.cuda.is_available():
-            self.device=0
+            self.device = 0
         else:
             self.device = "cpu"
 
         self.strong_sort = StrongSORT(
-                    self.strong_sort_weights,
-                    self.device,
-                    fp16=False,
-                    max_dist=cfg.STRONGSORT.MAX_DIST,
-                    max_iou_distance=cfg.STRONGSORT.MAX_IOU_DISTANCE,
-                    max_age=cfg.STRONGSORT.MAX_AGE,
-                    n_init=cfg.STRONGSORT.N_INIT,
-                    nn_budget=cfg.STRONGSORT.NN_BUDGET,
-                    mc_lambda=cfg.STRONGSORT.MC_LAMBDA,
-                    ema_alpha=cfg.STRONGSORT.EMA_ALPHA,
-
-                )
+            self.strong_sort_weights,
+            self.device,
+            fp16=False,
+            max_dist=cfg.STRONGSORT.MAX_DIST,
+            max_iou_distance=cfg.STRONGSORT.MAX_IOU_DISTANCE,
+            max_age=cfg.STRONGSORT.MAX_AGE,
+            n_init=cfg.STRONGSORT.N_INIT,
+            nn_budget=cfg.STRONGSORT.NN_BUDGET,
+            mc_lambda=cfg.STRONGSORT.MC_LAMBDA,
+            ema_alpha=cfg.STRONGSORT.EMA_ALPHA,
+        )
 
     def update(
         self,
         xywh: torch.Tensor,
-        confidences: torch.Tensor, 
-        clss: torch.Tensor, 
-        frame: np.ndarray
-        ) -> Dict:
+        confidences: torch.Tensor,
+        clss: torch.Tensor,
+        frame: np.ndarray,
+    ) -> Dict:
         """predict id object and return a dictionary with id and center
 
         Args:
@@ -73,7 +74,7 @@ class Tracker:
         """
         outputs = self.strong_sort.update(
             xywh.cpu(), confidences.cpu(), clss.cpu(), frame
-            )
+        )
 
         center_objects = {}
         if len(outputs):
