@@ -9,6 +9,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from config.config import DATA_DIR, TABLES_CONFIG
 from vision_analytic.utils import create_bbdd, load_pickle
 
+
 class CRMProcesor:
     """
     Manage conexion to data bases, query for face math and update register
@@ -17,7 +18,7 @@ class CRMProcesor:
     -------
     query_embedding(embeddings: np.ndarray, threshold_score: float=0.7)
         search by similarity cosine and get the user id
-    
+
     query_infoclient(self, id_user: str)
         consult info available of the consumer
 
@@ -25,11 +26,12 @@ class CRMProcesor:
         insert a new register in data bases
 
     """
+
     def __init__(self) -> None:
         self.users_embeddings_dir = DATA_DIR / "user_embeddings.pkl"
         self.info_users_dir = DATA_DIR / "info_users.pkl"
         self.load_bbdd()
-        
+
     def load_bbdd(self) -> None:
 
         if not self.users_embeddings_dir.exists():
@@ -40,8 +42,9 @@ class CRMProcesor:
 
         self.users_embeddings = load_pickle(self.users_embeddings_dir)
         self.info_users = load_pickle(self.info_users_dir)
-        self.matrix_crm = [embbeding for embbeding  in self.users_embeddings["embedding"].values]
-
+        self.matrix_crm = [
+            embbeding for embbeding in self.users_embeddings["embedding"].values
+        ]
 
     def create_register(self, info_register: Dict) -> Dict:
         """Create initial register for a new user
@@ -58,38 +61,39 @@ class CRMProcesor:
 
         new_register_embedding = {
             key: info_register[key] for key in cols_user_embeddings
-            }
-
-        new_register_info= {
-            key: info_register[key] for key in cols_info_users 
         }
 
-        self.users_embeddings = pd.concat([
-            self.users_embeddings, pd.DataFrame.from_dict(new_register_embedding)
-        ])
+        new_register_info = {key: info_register[key] for key in cols_info_users}
 
-        self.info_users = pd.concat([
-            self.info_users, pd.DataFrame.from_dict(new_register_info)
-        ])
+        self.users_embeddings = pd.concat(
+            [self.users_embeddings, pd.DataFrame.from_dict(new_register_embedding)]
+        )
+
+        self.info_users = pd.concat(
+            [self.info_users, pd.DataFrame.from_dict(new_register_info)]
+        )
 
         # save new bbdd
         self.users_embeddings.to_pickle(DATA_DIR / "user_embeddings.pkl")
         self.info_users.to_pickle(DATA_DIR / "info_users.pkl")
 
         # update matrix embedding
-        self.matrix_crm = [embbeding for embbeding  in self.users_embeddings["embedding"].values]
+        self.matrix_crm = [
+            embbeding for embbeding in self.users_embeddings["embedding"].values
+        ]
 
         status_create = {
             "status": True,
             "cols_create": {
                 "user_embedding_table": cols_user_embeddings,
-                "user_info_table": cols_info_users
-                }
+                "user_info_table": cols_info_users,
+            },
         }
         return status_create
 
-
-    def query_embedding(self, embeddings: np.ndarray, threshold_score: float=0.7) -> List[Dict]:
+    def query_embedding(
+        self, embeddings: np.ndarray, threshold_score: float = 0.7
+    ) -> List[Dict]:
         """Search in bbdd by embedding taking a threshold_score to decide if query is acceptable
 
         Args:
@@ -100,7 +104,7 @@ class CRMProcesor:
         Returns:
             List[Dict]: Each embedding generate a dict with info about the query
                 {
-                    "status": boolean. result for threshold_score acceptance 
+                    "status": boolean. result for threshold_score acceptance
                     "id_user": number id if the user is fount
                     "score": score the cosine similarity
                 }
@@ -110,17 +114,12 @@ class CRMProcesor:
 
         for id_user, score in zip(id_users, scores):
             if score > threshold_score:
-                status=True
+                status = True
             else:
-                status=False
-            query_resuls.append({
-                "status": status,
-                "id_user": id_user,
-                "score": score
-            })
+                status = False
+            query_resuls.append({"status": status, "id_user": id_user, "score": score})
 
         return query_resuls
-
 
     def query_infoclient(self, id_user: str) -> Dict:
         """
@@ -136,7 +135,7 @@ class CRMProcesor:
                     }
             }
         """
-        query_result = self.info_users[self.info_users["id_user"]==id_user]
+        query_result = self.info_users[self.info_users["id_user"] == id_user]
         query_result = query_result.to_dict(orient="index")
 
         return query_result
@@ -150,25 +149,19 @@ class CRMProcesor:
         Returns:
             np.ndarray: each embeddings_input with each bbdd-embeddings matrix
         """
-        return cosine_similarity(
-            embeddings_input,
-            self.matrix_crm
-        )
+        return cosine_similarity(embeddings_input, self.matrix_crm)
 
     def _predict(self, embeddings_input: np.ndarray) -> Tuple:
-    
-        #calculate distance
-        matrix_similarity = self.calculate_cosine_similarity(
-            embeddings_input
-        )
-        
+
+        # calculate distance
+        matrix_similarity = self.calculate_cosine_similarity(embeddings_input)
+
         scores = matrix_similarity.max(axis=1)
         arg_max = matrix_similarity.argmax(axis=1)
-        
+
         # get id_user
         id_users = []
         for max_value in arg_max:
             id_users.append(self.users_embeddings["id_user"].values[max_value])
-        
-        return (id_users, scores)
 
+        return (id_users, scores)

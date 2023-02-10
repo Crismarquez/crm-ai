@@ -25,7 +25,7 @@ RAWDATA_DIR.mkdir(parents=True, exist_ok=True)
 
 TABLES_CONFIG = {
     "user_embeddings": ["id_user", "embedding"],
-    "info_users": ["id_user", "name", "age", "phone", "accept"]
+    "info_users": ["id_user", "name", "age", "phone", "accept"],
 }
 
 EMBEDDING_DIMENSION = 512

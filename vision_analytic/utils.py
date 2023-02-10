@@ -33,16 +33,14 @@ def xyxy_to_xywh(x):
     y[:, 3] = x[:, 3] - x[:, 1]  # height
     return y
 
-def create_bbdd(
-    tables: List = ["user_embeddings", "info_users"]
-    ) -> None:
-    
+
+def create_bbdd(tables: List = ["user_embeddings", "info_users"]) -> None:
+
     for table in tables:
-        pd.DataFrame(
-            columns=TABLES_CONFIG[table]
-        ).to_pickle(DATA_DIR / f"{table}.pkl")
+        pd.DataFrame(columns=TABLES_CONFIG[table]).to_pickle(DATA_DIR / f"{table}.pkl")
+
 
 def load_pickle(file_dir: Path):
-    with open(file_dir, 'rb') as pickle_file:
+    with open(file_dir, "rb") as pickle_file:
         content = pickle.load(pickle_file)
     return content

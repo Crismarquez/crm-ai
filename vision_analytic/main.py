@@ -99,6 +99,7 @@ def tracking(source=None):
     cap.release()
     cv2.destroyAllWindows()
 
+
 @app.command()
 def createregister():
 
@@ -116,23 +117,23 @@ def createregister():
         "phone": [phone],
         "id_user": [id_user],
         "accept": [accept],
-        "embedding": [np.random.rand(EMBEDDING_DIMENSION)]
+        "embedding": [np.random.rand(EMBEDDING_DIMENSION)],
     }
 
     result_register = crm_ddbb.create_register(user_info)
 
-    print("*"*16)
+    print("*" * 16)
     print("Result of register: ", result_register)
 
     new_embedding = [np.random.rand(EMBEDDING_DIMENSION)]
 
     result_query = crm_ddbb.query_embedding(new_embedding, threshold_score=-1.0)
 
-    print("\n", "*"*16)
+    print("\n", "*" * 16)
     print("Result query embedding (face-match), threshold: -1.0")
     print(result_query)
 
-    print("\n", "*"*16)
+    print("\n", "*" * 16)
     print("Result query info", "\n")
     for query_user in result_query:
         if query_user["status"]:
@@ -140,6 +141,7 @@ def createregister():
             print(info_query)
         else:
             print("not match user")
+
 
 if __name__ == "__main__":
     app()
