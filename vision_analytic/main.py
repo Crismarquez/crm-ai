@@ -3,6 +3,7 @@ import cv2
 import torch
 import numpy as np
 
+from vision_analytic.engineering import Watchful
 from vision_analytic.recognition import FaceRecognition
 from vision_analytic.tracking import Tracker
 from vision_analytic.utils import xyxy_to_xywh
@@ -49,7 +50,7 @@ def facerecognition(source=None):
 @app.command()
 def tracking(source=None):
 
-    model = FaceRecognition()
+    face_model = FaceRecognition()
     tracker = Tracker()
 
     if source is None:
@@ -62,7 +63,7 @@ def tracking(source=None):
         if not ret:
             break
 
-        prediction = model.predict(frame)
+        prediction = face_model.predict(frame)
 
         if prediction:
             xyxy = []
@@ -80,7 +81,8 @@ def tracking(source=None):
             )
 
             # draw id
-            for objectID, centroid in objects.items():
+            for object in objects:
+                objectID, centroid = object
                 cv2.putText(
                     frame,
                     "ID {}".format(objectID),
@@ -141,6 +143,22 @@ def createregister():
             print(info_query)
         else:
             print("not match user")
+
+@app.command()
+def watchful():
+
+    face_model = FaceRecognition()
+    tracker = Tracker()
+    crm_ddbb = CRMProcesor()
+
+    engineering = Watchful(
+        name_vigilant="main",
+        recognition=face_model,
+        tracker=tracker,
+        data_manager=crm_ddbb
+    )
+
+    engineering.capture(source=0)
 
 
 if __name__ == "__main__":

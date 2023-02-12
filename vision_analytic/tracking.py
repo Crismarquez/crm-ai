@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict
+from typing import Dict, List, Tuple
 
 import numpy as np
 import torch
@@ -60,7 +60,7 @@ class Tracker:
         confidences: torch.Tensor,
         clss: torch.Tensor,
         frame: np.ndarray,
-    ) -> Dict:
+    ) -> List[Tuple]:
         """predict id object and return a dictionary with id and center
 
         Args:
@@ -70,13 +70,13 @@ class Tracker:
             frame (np.ndarray): original image
 
         Returns:
-            Dict: {id_pbject, centroid}
+            List: [Tuple[raw_id, (center)]]
         """
         outputs = self.strong_sort.update(
             xywh.cpu(), confidences.cpu(), clss.cpu(), frame
         )
 
-        center_objects = {}
+        center_objects = []
         if len(outputs):
             center_objects = to_center_objects(outputs)
 

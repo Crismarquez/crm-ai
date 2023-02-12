@@ -16,10 +16,10 @@ def to_center_objects(outputs):
     centroid_y = np.mean([outputs_bbox[:, 1], outputs_bbox[:, 3]], axis=0)
     id_objects = outputs[:, 4]
 
-    center_objects = {}
+    center_objects = []
 
     for id_object, x, y in zip(id_objects, centroid_x, centroid_y):
-        center_objects[id_object] = [int(x), int(y)]
+        center_objects.append((id_object, (int(x), int(y))))
 
     return center_objects
 
@@ -44,3 +44,20 @@ def load_pickle(file_dir: Path):
     with open(file_dir, "rb") as pickle_file:
         content = pickle.load(pickle_file)
     return content
+
+def get_angle(a: np.array, b: np.array, c: np.array) -> float:
+    ba = a - b
+    bc = c - b
+
+    cosine_angle = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc))
+    angle = np.arccos(cosine_angle)
+
+    return np.degrees(angle)
+    
+def engagement_detect(left_angle, right_angle, min_angle=80, max_angle=110) -> bool:
+
+    if ((left_angle > min_angle) & (right_angle > min_angle) 
+    & (left_angle < max_angle) & (right_angle < max_angle)):
+        return True
+    else:
+        return False
