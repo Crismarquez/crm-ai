@@ -1,14 +1,17 @@
+import time
+import pickle
+
 import typer
 import cv2
 import torch
 import numpy as np
 
-from vision_analytic.engineering import Watchful
+from vision_analytic.engineering import Watchful, CRMRegister
 from vision_analytic.recognition import FaceRecognition
 from vision_analytic.tracking import Tracker
 from vision_analytic.utils import xyxy_to_xywh
 from vision_analytic.data import CRMProcesor
-from config.config import EMBEDDING_DIMENSION
+from config.config import EMBEDDING_DIMENSION, RAWDATA_DIR
 
 
 # Initialize Typer CLI app
@@ -105,7 +108,14 @@ def tracking(source=None):
 @app.command()
 def createregister():
 
+    face_model = FaceRecognition()
     crm_ddbb = CRMProcesor()
+
+    registration = CRMRegister(
+        name_vigilant="register",
+        recognition=face_model,
+        data_manager=crm_ddbb
+)
 
     name = input("Por favor ingrese su nombre: ")
     age = input("Por favor ingrese su edad: ")
@@ -113,26 +123,40 @@ def createregister():
     id_user = input("Por favor ingrese su numero de identificación: ")
     accept = input("Acepta terminos y condiciones (y/n): ")
 
+    time_register = time.strftime("%d-%m-%Y-%H-%M-%S", time.localtime())
+
     user_info = {
         "name": [name],
         "age": [age],
         "phone": [phone],
         "id_user": [id_user],
-        "accept": [accept],
-        "embedding": [np.random.rand(EMBEDDING_DIMENSION)],
+        "accept": [accept]
     }
+
+    user_info = registration.capture(source=0, user_info=user_info)
+
+    print("states_registration:", registration.state_notification)
+    # save all register 
+    file_name = f"{user_info['id_user']}_{time_register}_user_register.pkl"
+
+    with open(RAWDATA_DIR / file_name, "wb") as handle:
+        pickle.dump(user_info, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+    # to test one embedding
+    new_embedding = [user_info["meta_data"]["embedding"].values[0]]
+
+    # delete meta data
+    user_info.pop("meta_data")
 
     result_register = crm_ddbb.create_register(user_info)
 
     print("*" * 16)
     print("Result of register: ", result_register)
 
-    new_embedding = [np.random.rand(EMBEDDING_DIMENSION)]
-
-    result_query = crm_ddbb.query_embedding(new_embedding, threshold_score=-1.0)
+    result_query = crm_ddbb.query_embedding(new_embedding, threshold_score=0.9)
 
     print("\n", "*" * 16)
-    print("Result query embedding (face-match), threshold: -1.0")
+    print("Result query embedding (face-match), threshold: 0.9")
     print(result_query)
 
     print("\n", "*" * 16)

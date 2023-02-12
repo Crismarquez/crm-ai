@@ -130,7 +130,9 @@ dmypy.json
 
 #Data
 data/
+results/
 temp.py
 
 #Store
 store/
+

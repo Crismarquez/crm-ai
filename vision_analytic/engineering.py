@@ -3,12 +3,14 @@ from typing import Dict
 import cv2
 import pandas as pd
 import torch
+import numpy as np
 
 from vision_analytic.data import CRMProcesor
 from vision_analytic.recognition import FaceRecognition
 from vision_analytic.tracking import Tracker
-from vision_analytic.utils import xyxy_to_xywh, get_angle, engagement_detect
-from config.config import DISTANCE_EYES_THRESHOLD, N_EMBEDDINGS
+from vision_analytic.utils import (
+    xyxy_to_xywh, get_angle, engagement_detect, crop_img, quality_embeddings)
+from config.config import DISTANCE_EYES_THRESHOLD, N_EMBEDDINGS, N_EMBEDDINGS_REGISTER
 
 class Watchful:
     def __init__(
@@ -38,7 +40,10 @@ class Watchful:
             if not ret:
                 break
             
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             det_recognitions = self.recognition.predict(frame, threshold=0.7)
+            frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+
             if det_recognitions:
                 xyxy = []
                 confidence = []
@@ -179,3 +184,112 @@ class Watchful:
         # mean model
         df_predict = raw_embeddings.groupby("id_raw")["embedding"].mean().reset_index()
         return df_predict
+
+
+class CRMRegister(Watchful):
+    def __init__(self, name_vigilant: str, recognition: FaceRecognition, data_manager: CRMProcesor) -> None:
+        Watchful.__init__(
+            self,
+            name_vigilant=name_vigilant, 
+            recognition=recognition, 
+            tracker=None,
+            data_manager=data_manager)
+        
+        self.streaming_bbdd = pd.DataFrame(columns=["id_raw", "embedding", "img_crop"])
+        self.state_notification = {}
+
+    def capture(self, source, user_info: Dict) -> None:
+
+        df_embedding_register = None
+
+        cap = cv2.VideoCapture(source)
+
+        W = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        H = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        xyxy_crop = self.calculate_crop(W=W, H=H, pxs_x=300, pxs_y=400)
+
+        id_user = user_info["id_user"]
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+
+            frame = crop_img(frame, xyxy_crop)
+
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            det_recognitions = self.recognition.predict(img=frame, threshold=0.8)
+            frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+
+            if len(det_recognitions) > 1:
+                self.state_notification["more_one_face"] = "more than one face is detected"
+
+            elif len(det_recognitions) == 1:
+                face = det_recognitions[0]
+
+                # quality criterial
+                quality_aprove = self.quality_criterial(face)
+                if quality_aprove:
+                    embedding_id = {
+                                "id_raw": id_user,
+                                "embedding": [face["embedding"]],
+                                "img_crop" : [crop_img(frame, face["bbox"])]
+                                }
+                    self.streaming_bbdd = pd.concat([
+                                self.streaming_bbdd,
+                                pd.DataFrame.from_dict(embedding_id)
+                            ])
+                else:
+                    self.state_notification["quality_criterial"] = "see the camera or near"
+
+                if len(self.streaming_bbdd) > N_EMBEDDINGS_REGISTER:
+                    # quality of embeddings
+                    matrix_embedding = np.array(
+                        [row for row in self.streaming_bbdd["embedding"].values]
+                        )
+                    quality_sparce = quality_embeddings(matrix_embedding, threshoold=0.9)
+
+                    if quality_sparce > 0.95:
+                        df_embedding_register = self.embedding_transformation(self.streaming_bbdd)
+
+                        self.state_notification["created"] = "Creating register"
+                    else:
+                        self.state_notification["consistence"] = """
+                        not register consistence - restarting
+                        """
+                        self.streaming_bbdd = pd.DataFrame()
+
+                # draw detection
+                start = (int(face["bbox"][0]), int(face["bbox"][1]))
+                end = (int(face["bbox"][2]), int(face["bbox"][3]))
+                frame = cv2.rectangle(
+                    frame,
+                    start, 
+                    end,
+                    color=(255, 0, 0),
+                    thickness=2
+                    )
+            print(self.state_notification)
+            self.state_notification = {}
+            cv2.imshow("face recognition", frame)
+
+            if df_embedding_register is not None:
+                user_info["embedding"] = [df_embedding_register["embedding"].values[0]]
+                user_info["meta_data"] = self.streaming_bbdd
+                return user_info
+
+            if cv2.waitKey(10) == ord("q"):
+                break
+
+        cap.release()
+        cv2.destroyAllWindows()
+
+        
+
+    def calculate_crop(self, W, H, pxs_x: int=300, pxs_y: int=400) -> np.array:
+
+        x_start = int(W / 2) - int(pxs_x/2)
+        x_end = int(W / 2) + int(pxs_x/2)
+        y_start = int(H / 2) - int(pxs_y/2)
+        y_end = int(H / 2) + int(pxs_y/2)
+
+        return np.array([x_start, y_start, x_end, y_end])

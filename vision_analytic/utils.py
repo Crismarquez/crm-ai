@@ -5,6 +5,7 @@ import numpy as np
 import torch
 import pandas as pd
 import pickle
+from sklearn.metrics.pairwise import cosine_similarity
 
 from config.config import DATA_DIR, TABLES_CONFIG
 
@@ -53,7 +54,7 @@ def get_angle(a: np.array, b: np.array, c: np.array) -> float:
     angle = np.arccos(cosine_angle)
 
     return np.degrees(angle)
-    
+
 def engagement_detect(left_angle, right_angle, min_angle=80, max_angle=110) -> bool:
 
     if ((left_angle > min_angle) & (right_angle > min_angle) 
@@ -61,3 +62,28 @@ def engagement_detect(left_angle, right_angle, min_angle=80, max_angle=110) -> b
         return True
     else:
         return False
+
+
+def crop_img(frame, xyxy):
+    xyxy = xyxy.astype(int)
+    for i, value in enumerate(xyxy):
+        if value < 0:
+            xyxy[i] = 0
+
+    croped = frame[xyxy[1]:xyxy[3], xyxy[0]:xyxy[2]]
+    return croped
+
+def quality_embeddings(matrix_embedding: np.ndarray, threshoold:float = 0.9) -> float:
+    matrix_cosine = cosine_similarity(
+        matrix_embedding,
+        matrix_embedding
+    )
+
+    sparce_similarity = (matrix_cosine < threshoold).sum()
+    total_combination = (
+        matrix_cosine.shape[0]*matrix_cosine.shape[1]-len(matrix_cosine.shape)
+        )
+
+    quality = 1 - sparce_similarity/total_combination
+
+    return quality
