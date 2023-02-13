@@ -169,7 +169,7 @@ def createregister():
             print("not match user")
 
 @app.command()
-def watchful():
+def watchful(source:int=0):
 
     face_model = FaceRecognition()
     tracker = Tracker()
@@ -182,7 +182,7 @@ def watchful():
         data_manager=crm_ddbb
     )
 
-    engineering.capture(source=0)
+    engineering.capture(source=source)
 
 
 if __name__ == "__main__":

@@ -7,3 +7,4 @@ gdown
 tensorboard
 twilio
 rich
+uvicorn

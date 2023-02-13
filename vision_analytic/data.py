@@ -174,7 +174,7 @@ class NotificationManager:
     def __init__(self, data_manager: CRMProcesor) -> None:
 
         self.data_manager = data_manager
-        self.client = Client(ACCOUNT_SID, AUTH_TOCKEN)
+        # self.client = Client(ACCOUNT_SID, AUTH_TOCKEN)
 
         self.notification_history = {
             "id_user": [],
