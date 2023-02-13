@@ -106,7 +106,7 @@ def tracking(source=None):
 
 
 @app.command()
-def createregister():
+def createregister(user_info):
 
     face_model = FaceRecognition()
     crm_ddbb = CRMProcesor()
@@ -117,21 +117,21 @@ def createregister():
         data_manager=crm_ddbb
 )
 
-    name = input("Por favor ingrese su nombre: ")
-    age = input("Por favor ingrese su edad: ")
-    phone = input("Por favor ingrese su numero de teléfono: ")
-    id_user = input("Por favor ingrese su numero de identificación: ")
-    accept = input("Acepta terminos y condiciones (y/n): ")
+    # name = input("Por favor ingrese su nombre: ")
+    # age = input("Por favor ingrese su edad: ")
+    # phone = input("Por favor ingrese su numero de teléfono: ")
+    # id_user = input("Por favor ingrese su numero de identificación: ")
+    # accept = input("Acepta terminos y condiciones (y/n): ")
 
     time_register = time.strftime("%d-%m-%Y-%H-%M-%S", time.localtime())
 
-    user_info = {
-        "name": [name],
-        "age": [age],
-        "phone": [phone],
-        "id_user": [id_user],
-        "accept": [accept]
-    }
+    # user_info = {
+    #     "name": [name],
+    #     "age": [age],
+    #     "phone": [phone],
+    #     "id_user": [id_user],
+    #     "accept": [accept]
+    # }
 
     user_info = registration.capture(source=0, user_info=user_info)
 

@@ -9,8 +9,6 @@ from fastapi.responses import StreamingResponse
 import uvicorn
 
 from vision_analytic.main import watchful
-from config import config
-from config.config import logger
 
 # Define application
 app = FastAPI(
@@ -28,4 +26,4 @@ async def get_video(camera_source: str):
 # check to see if this is the main thread of execution
 if __name__ == '__main__':
     # start the flask app
-    uvicorn.run(app, host="0.0.0.0", port=8000, access_log=False)
+    uvicorn.run(app, host="0.0.0.0", port=8000, access_log=True)
