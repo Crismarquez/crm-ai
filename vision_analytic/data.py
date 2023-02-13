@@ -5,10 +5,13 @@ from pathlib import Path
 import pandas as pd
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
+from twilio.rest import Client
 
-from config.config import DATA_DIR, TABLES_CONFIG
+from config.config import DATA_DIR, TABLES_CONFIG, logger
 from vision_analytic.utils import create_bbdd, load_pickle
 
+ACCOUNT_SID = ""
+AUTH_TOCKEN = ""
 
 class CRMProcesor:
     """
@@ -165,3 +168,40 @@ class CRMProcesor:
             id_users.append(self.users_embeddings["id_user"].values[max_value])
 
         return (id_users, scores)
+
+
+class NotificationManager:
+    def __init__(self, data_manager: CRMProcesor) -> None:
+
+        self.data_manager = data_manager
+        self.client = Client(ACCOUNT_SID, AUTH_TOCKEN)
+
+        self.notification_history = {
+            "id_user": [],
+            "phone": []
+            }
+
+    def send_sms(self, id_user: str) -> Dict:
+        result = self.data_manager.query_infoclient(id_user)
+        name = result[0]["name"]
+        phone = result[0]["phone"]
+        if phone not in self.notification_history["id_user"]:
+            # message = self.client.messages.create(
+            #                 body=f"""
+            #                 Hola {name}, estamos felices de tenerte en nuestra tienda,
+            #                 disfruta de 30% en la sección de deportes
+            #                 """,
+            #                 from_="+18474236910",
+            #                 to="+57"+f"{phone}"
+            #                 )
+            logger.info(f"""
+                SMS to +57{phone}: Hola {name}, estamos felices de tenerte en nuestra tienda, disfruta de 30% en la sección de deportes
+                """
+                )
+            self.notification_history["phone"].append(phone)
+
+    def generate_notification(self, face: np.ndarray, id_user: str):
+        if id_user not in self.notification_history["id_user"]:
+            result = self.data_manager.query_infoclient(id_user)
+            logger.info(result)
+            self.notification_history["id_user"].append(id_user)

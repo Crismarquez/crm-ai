@@ -5,12 +5,14 @@ import pandas as pd
 import torch
 import numpy as np
 
-from vision_analytic.data import CRMProcesor
+from vision_analytic.data import CRMProcesor, NotificationManager
 from vision_analytic.recognition import FaceRecognition
 from vision_analytic.tracking import Tracker
 from vision_analytic.utils import (
     xyxy_to_xywh, get_angle, engagement_detect, crop_img, quality_embeddings)
-from config.config import DISTANCE_EYES_THRESHOLD, N_EMBEDDINGS, N_EMBEDDINGS_REGISTER
+from config.config import (
+    DISTANCE_EYES_THRESHOLD, N_EMBEDDINGS, N_EMBEDDINGS_REGISTER, logger
+)
 
 class Watchful:
     def __init__(
@@ -18,7 +20,7 @@ class Watchful:
         name_vigilant:str,
         recognition: FaceRecognition,
         tracker: Tracker,
-        data_manager: CRMProcesor
+        data_manager: CRMProcesor,
         ) -> None:
         
         self.name_vigilant= name_vigilant
@@ -27,8 +29,10 @@ class Watchful:
         self.tracker = tracker
         self.data_manager = data_manager
 
+        self.notification_manager = NotificationManager(data_manager=self.data_manager)
         self.streaming_bbdd = pd.DataFrame(columns=["id_raw", "embedding"])
         self.raw2user_identified = {}
+        self.info_user = {}
 
 
     def capture(self, source) -> None:
@@ -103,10 +107,17 @@ class Watchful:
                         threshold_score=0.7
                         )
                     
-                    # update raw2user_identified
+                    # update raw2user_identified - add info user
                     for id_raw, result in zip(df_transform["id_raw"], query_resuls):
                         if result["status"]:
                             self.raw2user_identified[id_raw] = result["id_user"]
+                            self.info_user[result["id_user"]] = self.data_manager.query_infoclient(
+                                result["id_user"]
+                                )
+                            # generate notifications
+                            self.notification_manager.generate_notification(frame, result["id_user"])
+                            self.notification_manager.send_sms(result["id_user"])
+                            
 
                     # clean stream
                     self.streaming_bbdd = self.streaming_bbdd.drop(
@@ -122,6 +133,7 @@ class Watchful:
                     #query info
                     if face["raw2user_info"]["raw2user_status"]:
                         objectID = face["raw2user_info"]["user_id"]
+                        objectID = self.info_user[objectID][0]["name"]
                     else:
                         objectID = object_tracked["id_raw"]
                     cv2.putText(
@@ -268,7 +280,7 @@ class CRMRegister(Watchful):
                     color=(255, 0, 0),
                     thickness=2
                     )
-            print(self.state_notification)
+            logger.info(self.state_notification)
             self.state_notification = {}
             cv2.imshow("face recognition", frame)
 

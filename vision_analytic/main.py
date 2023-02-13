@@ -11,7 +11,7 @@ from vision_analytic.recognition import FaceRecognition
 from vision_analytic.tracking import Tracker
 from vision_analytic.utils import xyxy_to_xywh
 from vision_analytic.data import CRMProcesor
-from config.config import EMBEDDING_DIMENSION, RAWDATA_DIR
+from config.config import EMBEDDING_DIMENSION, RAWDATA_DIR, logger
 
 
 # Initialize Typer CLI app
