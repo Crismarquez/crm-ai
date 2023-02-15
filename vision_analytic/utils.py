@@ -46,6 +46,7 @@ def load_pickle(file_dir: Path):
         content = pickle.load(pickle_file)
     return content
 
+
 def get_angle(a: np.array, b: np.array, c: np.array) -> float:
     ba = a - b
     bc = c - b
@@ -55,10 +56,15 @@ def get_angle(a: np.array, b: np.array, c: np.array) -> float:
 
     return np.degrees(angle)
 
+
 def engagement_detect(left_angle, right_angle, min_angle=80, max_angle=110) -> bool:
 
-    if ((left_angle > min_angle) & (right_angle > min_angle) 
-    & (left_angle < max_angle) & (right_angle < max_angle)):
+    if (
+        (left_angle > min_angle)
+        & (right_angle > min_angle)
+        & (left_angle < max_angle)
+        & (right_angle < max_angle)
+    ):
         return True
     else:
         return False
@@ -70,20 +76,18 @@ def crop_img(frame, xyxy):
         if value < 0:
             xyxy[i] = 0
 
-    croped = frame[xyxy[1]:xyxy[3], xyxy[0]:xyxy[2]]
+    croped = frame[xyxy[1] : xyxy[3], xyxy[0] : xyxy[2]]
     return croped
 
-def quality_embeddings(matrix_embedding: np.ndarray, threshoold:float = 0.9) -> float:
-    matrix_cosine = cosine_similarity(
-        matrix_embedding,
-        matrix_embedding
-    )
+
+def quality_embeddings(matrix_embedding: np.ndarray, threshoold: float = 0.9) -> float:
+    matrix_cosine = cosine_similarity(matrix_embedding, matrix_embedding)
 
     sparce_similarity = (matrix_cosine < threshoold).sum()
-    total_combination = (
-        matrix_cosine.shape[0]*matrix_cosine.shape[1]-len(matrix_cosine.shape)
-        )
+    total_combination = matrix_cosine.shape[0] * matrix_cosine.shape[1] - len(
+        matrix_cosine.shape
+    )
 
-    quality = 1 - sparce_similarity/total_combination
+    quality = 1 - sparce_similarity / total_combination
 
     return quality

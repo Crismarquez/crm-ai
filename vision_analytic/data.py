@@ -13,6 +13,7 @@ from vision_analytic.utils import create_bbdd, load_pickle
 ACCOUNT_SID = ""
 AUTH_TOCKEN = ""
 
+
 class CRMProcesor:
     """
     Manage conexion to data bases, query for face math and update register
@@ -176,10 +177,7 @@ class NotificationManager:
         self.data_manager = data_manager
         # self.client = Client(ACCOUNT_SID, AUTH_TOCKEN)
 
-        self.notification_history = {
-            "id_user": [],
-            "phone": []
-            }
+        self.notification_history = {"id_user": [], "phone": []}
 
     def send_sms(self, id_user: str) -> Dict:
         result = self.data_manager.query_infoclient(id_user)
@@ -194,10 +192,11 @@ class NotificationManager:
             #                 from_="+18474236910",
             #                 to="+57"+f"{phone}"
             #                 )
-            logger.info(f"""
+            logger.info(
+                f"""
                 SMS to +57{phone}: Hola {name}, estamos felices de tenerte en nuestra tienda, disfruta de 30% en la sección de deportes
                 """
-                )
+            )
             self.notification_history["phone"].append(phone)
 
     def generate_notification(self, face: np.ndarray, id_user: str):

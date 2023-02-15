@@ -112,11 +112,10 @@ def createregister(user_info):
     crm_ddbb = CRMProcesor()
 
     registration = CRMRegister(
-        name_vigilant="register",
-        recognition=face_model,
-        data_manager=crm_ddbb
-)
+        name_vigilant="register", recognition=face_model, data_manager=crm_ddbb
+    )
 
+<<<<<<< HEAD
     # name = input("Por favor ingrese su nombre: ")
     # age = input("Por favor ingrese su edad: ")
     # phone = input("Por favor ingrese su numero de teléfono: ")
@@ -132,11 +131,28 @@ def createregister(user_info):
     #     "id_user": [id_user],
     #     "accept": [accept]
     # }
+=======
+    name = input("Please enter your name: ")
+    age = input("Please enter your age: ")
+    phone = input("Please enter your phone number: ")
+    id_user = input("Please enter your ID number: ")
+    accept = input("Accept terms and conditions (y/n): ")
+
+    time_register = time.strftime("%d-%m-%Y-%H-%M-%S", time.localtime())
+
+    user_info = {
+        "name": [name],
+        "age": [age],
+        "phone": [phone],
+        "id_user": [id_user],
+        "accept": [accept],
+    }
+>>>>>>> develop
 
     user_info = registration.capture(source=0, user_info=user_info)
 
     print("states_registration:", registration.state_notification)
-    # save all register 
+    # save all register
     file_name = f"{user_info['id_user']}_{time_register}_user_register.pkl"
 
     with open(RAWDATA_DIR / file_name, "wb") as handle:
@@ -168,8 +184,9 @@ def createregister(user_info):
         else:
             print("not match user")
 
+
 @app.command()
-def watchful(source:int=0):
+def watchful(source: int = 0):
 
     face_model = FaceRecognition()
     tracker = Tracker()
@@ -179,7 +196,7 @@ def watchful(source:int=0):
         name_vigilant="main",
         recognition=face_model,
         tracker=tracker,
-        data_manager=crm_ddbb
+        data_manager=crm_ddbb,
     )
 
     engineering.capture(source=source)
