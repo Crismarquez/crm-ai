@@ -1,10 +1,13 @@
 numpy=1.23
 insightface=0.7
-onnxruntime
 torch
 torchvision
 gdown
+onnxruntime
+opencv-python
+pandas
 tensorboard
 twilio
+typer
 rich
 uvicorn
