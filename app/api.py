@@ -19,13 +19,15 @@ app = FastAPI(
     version="0.1",
 )
 
+
 @app.get("/video")
 async def get_video(camera_source: str):
-    
+
     camera_source = int(camera_source)
     watchful(camera_source)
 
+
 # check to see if this is the main thread of execution
-if __name__ == '__main__':
+if __name__ == "__main__":
     # start the flask app
     uvicorn.run(app, host="0.0.0.0", port=8000, access_log=False)
