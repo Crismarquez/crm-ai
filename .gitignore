@@ -132,6 +132,7 @@ dmypy.json
 data/
 results/
 temp.py
+*.pth
 
 #Store
 store/
