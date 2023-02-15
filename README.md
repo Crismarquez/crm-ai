@@ -1,5 +1,9 @@
 # crm-ai
 
+This project is about a crm (customer relationship management) system integrated with computer vision capabilities such as facial recognition and other artificial intelligence techniques.
+
+The main idea for the development of this project is to answer the question "How to make the crm can see".
+
 ## Virtual develop environment
 <prev>
 

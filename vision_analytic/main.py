@@ -115,11 +115,11 @@ def createregister():
         name_vigilant="register", recognition=face_model, data_manager=crm_ddbb
     )
 
-    name = input("Por favor ingrese su nombre: ")
-    age = input("Por favor ingrese su edad: ")
-    phone = input("Por favor ingrese su numero de teléfono: ")
-    id_user = input("Por favor ingrese su numero de identificación: ")
-    accept = input("Acepta terminos y condiciones (y/n): ")
+    name = input("Please enter your name: ")
+    age = input("Please enter your age: ")
+    phone = input("Please enter your phone number: ")
+    id_user = input("Please enter your ID number: ")
+    accept = input("Accept terms and conditions (y/n): ")
 
     time_register = time.strftime("%d-%m-%Y-%H-%M-%S", time.localtime())
 
