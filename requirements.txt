@@ -6,8 +6,10 @@ gdown
 onnxruntime
 opencv-python
 pandas
+streamlit_webrtc
 tensorboard
 twilio
 typer
 rich
 uvicorn
+

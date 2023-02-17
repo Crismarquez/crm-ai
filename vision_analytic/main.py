@@ -115,23 +115,6 @@ def createregister(user_info):
         name_vigilant="register", recognition=face_model, data_manager=crm_ddbb
     )
 
-<<<<<<< HEAD
-    # name = input("Por favor ingrese su nombre: ")
-    # age = input("Por favor ingrese su edad: ")
-    # phone = input("Por favor ingrese su numero de teléfono: ")
-    # id_user = input("Por favor ingrese su numero de identificación: ")
-    # accept = input("Acepta terminos y condiciones (y/n): ")
-
-    time_register = time.strftime("%d-%m-%Y-%H-%M-%S", time.localtime())
-
-    # user_info = {
-    #     "name": [name],
-    #     "age": [age],
-    #     "phone": [phone],
-    #     "id_user": [id_user],
-    #     "accept": [accept]
-    # }
-=======
     name = input("Please enter your name: ")
     age = input("Please enter your age: ")
     phone = input("Please enter your phone number: ")
@@ -147,7 +130,6 @@ def createregister(user_info):
         "id_user": [id_user],
         "accept": [accept],
     }
->>>>>>> develop
 
     user_info = registration.capture(source=0, user_info=user_info)
 
@@ -201,6 +183,35 @@ def watchful(source: int = 0):
 
     engineering.capture(source=source)
 
+@app.command()
+def watchfulprocess(source: int = 0):
+
+    face_model = FaceRecognition()
+    tracker = Tracker()
+    crm_ddbb = CRMProcesor()
+
+    engineering = Watchful(
+        name_vigilant="main",
+        recognition=face_model,
+        tracker=tracker,
+        data_manager=crm_ddbb,
+    )
+
+    cap = cv2.VideoCapture(source)
+
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+
+        result = engineering.process(frame)
+
+        cv2.imshow("face recognition", result["frame"])
+        if cv2.waitKey(10) == ord("q"):
+            break
+
+    cap.release()
+    cv2.destroyAllWindows()
 
 if __name__ == "__main__":
     app()

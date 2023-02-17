@@ -28,8 +28,4 @@ async def get_video(camera_source: str):
 # check to see if this is the main thread of execution
 if __name__ == "__main__":
     # start the flask app
-<<<<<<< HEAD
-    uvicorn.run(app, host="0.0.0.0", port=8000, access_log=True)
-=======
     uvicorn.run(app, host="0.0.0.0", port=8000, access_log=False)
->>>>>>> develop

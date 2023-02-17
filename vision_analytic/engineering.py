@@ -170,6 +170,123 @@ class Watchful:
         cap.release()
         cv2.destroyAllWindows()
 
+    def process(self, img: np.ndarray):
+        frame = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        det_recognitions = self.recognition.predict(frame, threshold=0.7)
+        frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+
+        if det_recognitions:
+            xyxy = []
+            confidence = []
+            clss = [0] * len(det_recognitions)  # only one class
+
+            for face in det_recognitions:
+                xyxy.append(face["bbox"])
+                confidence.append(face["det_score"])
+
+            xyxy = torch.tensor(xyxy)
+            # get id and centroids dict
+            objects = self.tracker.update(
+                xyxy_to_xywh(xyxy),
+                torch.tensor(confidence),
+                torch.tensor(clss),
+                frame,
+            )
+
+            # det_recognitions + tracking
+            faces_metadata = []
+            for face, info_tracking in zip(det_recognitions, objects):
+                face["id_raw_info"] = {
+                    "id_raw": info_tracking[0],
+                    "center": info_tracking[1],
+                }
+                faces_metadata.append(face)
+
+            # det_recognitions + tracking + user_id
+            for face in faces_metadata:
+                raw2user_info = self.raw2user_id(face["id_raw_info"]["id_raw"])
+                face["raw2user_info"] = raw2user_info
+
+            # add streaming  if quality criterial is ok
+            for face in faces_metadata:
+                if not face["raw2user_info"]["raw2user_status"]:
+                    quality_aprove = self.quality_criterial(face)
+                    if quality_aprove:
+                        embedding_id = {
+                            "id_raw": face["id_raw_info"]["id_raw"],
+                            "embedding": [face["embedding"]],
+                        }
+                        self.streaming_bbdd = pd.concat(
+                            [
+                                self.streaming_bbdd,
+                                pd.DataFrame.from_dict(embedding_id),
+                            ]
+                        )
+
+            # embedding transformation
+            # select N=5 embedding to generate prediction
+            count_values = self.streaming_bbdd["id_raw"].value_counts()
+            to_filter_id = list(count_values[count_values > N_EMBEDDINGS].index)
+            df_to_predict = self.streaming_bbdd[
+                self.streaming_bbdd["id_raw"].isin(to_filter_id)
+            ]
+
+            if len(df_to_predict) > 0:
+                df_transform = self.embedding_transformation(df_to_predict)
+
+                query_resuls = self.data_manager.query_embedding(
+                    [embedding for embedding in df_transform["embedding"].values],
+                    threshold_score=0.7,
+                )
+
+                # update raw2user_identified - add info user
+                for id_raw, result in zip(df_transform["id_raw"], query_resuls):
+                    if result["status"]:
+                        self.raw2user_identified[id_raw] = result["id_user"]
+                        self.info_user[
+                            result["id_user"]
+                        ] = self.data_manager.query_infoclient(result["id_user"])
+                        # generate notifications
+                        self.notification_manager.generate_notification(
+                            frame, result["id_user"]
+                        )
+                        self.notification_manager.send_sms(result["id_user"])
+
+                # clean stream
+                self.streaming_bbdd = self.streaming_bbdd.drop(
+                    self.streaming_bbdd[
+                        self.streaming_bbdd["id_raw"].isin(
+                            list(df_transform["id_raw"])
+                        )
+                    ].index
+                )
+
+            # draw id
+            for face in faces_metadata:
+                object_tracked = face["id_raw_info"]
+                centroid = object_tracked["center"]
+                # query info
+                if face["raw2user_info"]["raw2user_status"]:
+                    objectID = face["raw2user_info"]["user_id"]
+                    objectID = self.info_user[objectID][0]["name"]
+                else:
+                    objectID = object_tracked["id_raw"]
+                cv2.putText(
+                    frame,
+                    "ID {}".format(objectID),
+                    (centroid[0] - 5, centroid[1] - 5),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.5,
+                    (0, 255, 0),
+                    2,
+                )
+                cv2.circle(frame, (centroid[0], centroid[1]), 4, (255, 0, 0), -1)
+        
+        return {"frame": frame,
+                "faces_metadata": faces_metadata
+                }
+
+
     def quality_criterial(self, face_metadata: Dict) -> bool:
 
         left_angle = get_angle(
@@ -312,6 +429,79 @@ class CRMRegister(Watchful):
 
         cap.release()
         cv2.destroyAllWindows()
+
+    def process(self, img: np.ndarray, user_info: Dict) -> Dict:
+
+        id_user = user_info["id_user"]
+        df_embedding_register = None
+
+        # frame = crop_img(frame, xyxy_crop)
+
+        frame = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        det_recognitions = self.recognition.predict(img=frame, threshold=0.8)
+        frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+
+        if len(det_recognitions) > 1:
+            self.state_notification[
+                "more_one_face"
+            ] = "more than one face is detected"
+
+        elif len(det_recognitions) == 1:
+            face = det_recognitions[0]
+
+            # quality criterial
+            quality_aprove = self.quality_criterial(face)
+            if quality_aprove:
+                embedding_id = {
+                    "id_raw": id_user,
+                    "embedding": [face["embedding"]],
+                    "img_crop": [crop_img(frame, face["bbox"])],
+                }
+                self.streaming_bbdd = pd.concat(
+                    [self.streaming_bbdd, pd.DataFrame.from_dict(embedding_id)]
+                )
+            else:
+                self.state_notification[
+                    "quality_criterial"
+                ] = "see the camera or near"
+
+            if len(self.streaming_bbdd) > N_EMBEDDINGS_REGISTER:
+                # quality of embeddings
+                matrix_embedding = np.array(
+                    [row for row in self.streaming_bbdd["embedding"].values]
+                )
+                quality_sparce = quality_embeddings(
+                    matrix_embedding, threshoold=0.9
+                )
+
+                if quality_sparce > 0.95:
+                    df_embedding_register = self.embedding_transformation(
+                        self.streaming_bbdd
+                    )
+
+                    self.state_notification["created"] = "Creating register"
+                else:
+                    self.state_notification[
+                        "consistence"
+                    ] = """
+                    not register consistence - restarting
+                    """
+                    self.streaming_bbdd = pd.DataFrame()
+
+            # draw detection
+            start = (int(face["bbox"][0]), int(face["bbox"][1]))
+            end = (int(face["bbox"][2]), int(face["bbox"][3]))
+            frame = cv2.rectangle(frame, start, end, color=(255, 0, 0), thickness=2)
+        logger.info(self.state_notification)
+        self.state_notification = {}
+
+        if df_embedding_register is not None:
+            user_info["embedding"] = [df_embedding_register["embedding"].values[0]]
+            user_info["meta_data"] = self.streaming_bbdd
+            # return user_info
+        return {"frame": frame,
+                "user_info": user_info
+                }
 
     def calculate_crop(self, W, H, pxs_x: int = 300, pxs_y: int = 400) -> np.array:
 
