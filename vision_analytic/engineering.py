@@ -255,9 +255,7 @@ class Watchful:
                 # clean stream
                 self.streaming_bbdd = self.streaming_bbdd.drop(
                     self.streaming_bbdd[
-                        self.streaming_bbdd["id_raw"].isin(
-                            list(df_transform["id_raw"])
-                        )
+                        self.streaming_bbdd["id_raw"].isin(list(df_transform["id_raw"]))
                     ].index
                 )
 
@@ -281,11 +279,8 @@ class Watchful:
                     2,
                 )
                 cv2.circle(frame, (centroid[0], centroid[1]), 4, (255, 0, 0), -1)
-        
-        return {"frame": frame,
-                "faces_metadata": faces_metadata
-                }
 
+        return {"frame": frame, "faces_metadata": faces_metadata}
 
     def quality_criterial(self, face_metadata: Dict) -> bool:
 
@@ -442,9 +437,7 @@ class CRMRegister(Watchful):
         frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
 
         if len(det_recognitions) > 1:
-            self.state_notification[
-                "more_one_face"
-            ] = "more than one face is detected"
+            self.state_notification["more_one_face"] = "more than one face is detected"
 
         elif len(det_recognitions) == 1:
             face = det_recognitions[0]
@@ -461,18 +454,14 @@ class CRMRegister(Watchful):
                     [self.streaming_bbdd, pd.DataFrame.from_dict(embedding_id)]
                 )
             else:
-                self.state_notification[
-                    "quality_criterial"
-                ] = "see the camera or near"
+                self.state_notification["quality_criterial"] = "see the camera or near"
 
             if len(self.streaming_bbdd) > N_EMBEDDINGS_REGISTER:
                 # quality of embeddings
                 matrix_embedding = np.array(
                     [row for row in self.streaming_bbdd["embedding"].values]
                 )
-                quality_sparce = quality_embeddings(
-                    matrix_embedding, threshoold=0.9
-                )
+                quality_sparce = quality_embeddings(matrix_embedding, threshoold=0.9)
 
                 if quality_sparce > 0.95:
                     df_embedding_register = self.embedding_transformation(
@@ -499,9 +488,7 @@ class CRMRegister(Watchful):
             user_info["embedding"] = [df_embedding_register["embedding"].values[0]]
             user_info["meta_data"] = self.streaming_bbdd
             # return user_info
-        return {"frame": frame,
-                "user_info": user_info
-                }
+        return {"frame": frame, "user_info": user_info}
 
     def calculate_crop(self, W, H, pxs_x: int = 300, pxs_y: int = 400) -> np.array:
 

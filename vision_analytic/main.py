@@ -183,6 +183,7 @@ def watchful(source: int = 0):
 
     engineering.capture(source=source)
 
+
 @app.command()
 def watchfulprocess(source: int = 0):
 
@@ -212,6 +213,7 @@ def watchfulprocess(source: int = 0):
 
     cap.release()
     cv2.destroyAllWindows()
+
 
 if __name__ == "__main__":
     app()

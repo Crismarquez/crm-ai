@@ -24,8 +24,7 @@ with st.form("form1", clear_on_submit=True):
             "age": [age],
             "phone": [phone],
             "id_user": [id_user],
-            "accept": [accept]
+            "accept": [accept],
         }
         logger.info(user_info)
         createregister(user_info)
-
