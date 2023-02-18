@@ -25,6 +25,14 @@ async def get_video(camera_source: str):
     watchful(camera_source)
 
 
+@app.get("/usersession")
+async def get_video(camera_source: str):
+
+    camera_source = int(camera_source)
+
+    watchful(camera_source)
+
+
 # check to see if this is the main thread of execution
 if __name__ == "__main__":
     # start the flask app

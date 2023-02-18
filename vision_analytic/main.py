@@ -207,12 +207,14 @@ def watchfulprocess(source: int = 0):
 
         result = engineering.process(frame)
 
-        cv2.imshow("face recognition", result["frame"])
-        if cv2.waitKey(10) == ord("q"):
-            break
+        #     cv2.imshow("face recognition", result["frame"])
+        #     if cv2.waitKey(10) == ord("q"):
+        #         break
 
-    cap.release()
-    cv2.destroyAllWindows()
+        # cap.release()
+        # cv2.destroyAllWindows()
+        for face in result["faces_metadata"]:
+            logger.info(face["raw2user_info"])
 
 
 if __name__ == "__main__":
